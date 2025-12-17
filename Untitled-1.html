@@ -1,0 +1,1872 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Макет ФГИС «Моя школа» — единое окно для ученика и родителей</title>
+  <meta name="description" content="Красивый прототип: успеваемость+ДЗ, рекомендации ЕГЭ, поступление онлайн, уведомления о возможностях." />
+
+  <style>
+    :root{
+      --bg: #0b1220;
+      --panel: rgba(255,255,255,.06);
+      --panel2: rgba(255,255,255,.09);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --soft: rgba(255,255,255,.12);
+      --line: rgba(255,255,255,.10);
+      --brand: #8ae9ff;
+      --brand2:#b6a6ff;
+      --ok:#6ef3b6;
+      --warn:#ffd37a;
+      --bad:#ff7aa2;
+
+      --shadow: 0 18px 45px rgba(0,0,0,.35);
+      --radius: 18px;
+      --radius2: 26px;
+      --blur: 14px;
+
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Liberation Sans", sans-serif;
+    }
+
+    /* Светлая тема (переключается кнопкой) */
+    [data-theme="light"]{
+      --bg: #f6f8ff;
+      --panel: rgba(10,20,40,.06);
+      --panel2: rgba(10,20,40,.09);
+      --text: rgba(10,20,40,.92);
+      --muted: rgba(10,20,40,.62);
+      --soft: rgba(10,20,40,.12);
+      --line: rgba(10,20,40,.10);
+      --shadow: 0 18px 45px rgba(10,20,40,.10);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: var(--sans);
+      color: var(--text);
+      background:
+        radial-gradient(1000px 700px at 10% 15%, rgba(138,233,255,.22), transparent 55%),
+        radial-gradient(900px 600px at 85% 20%, rgba(182,166,255,.20), transparent 55%),
+        radial-gradient(900px 700px at 60% 95%, rgba(110,243,182,.12), transparent 55%),
+        linear-gradient(180deg, rgba(0,0,0,.0), rgba(0,0,0,.25)),
+        var(--bg);
+      overflow-x:hidden;
+    }
+
+    a{ color: inherit; text-decoration: none; }
+    button, input, select{ font: inherit; color:inherit; }
+
+    .app{
+      display:grid;
+      grid-template-columns: 290px 1fr;
+      min-height:100vh;
+    }
+
+    /* Sidebar */
+    .side{
+      position:sticky;
+      top:0;
+      height:100vh;
+      padding:18px 14px;
+      border-right: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      backdrop-filter: blur(var(--blur));
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:14px;
+      border-radius: var(--radius2);
+      background: linear-gradient(135deg, rgba(138,233,255,.18), rgba(182,166,255,.12));
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: var(--shadow);
+    }
+    .brand__logo{
+      width:44px; height:44px;
+      border-radius: 14px;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.55), transparent 55%),
+        linear-gradient(135deg, rgba(138,233,255,.85), rgba(182,166,255,.80));
+      box-shadow: 0 12px 24px rgba(0,0,0,.22);
+      flex:0 0 auto;
+    }
+    .brand__title{ line-height:1.1; }
+    .brand__title b{ display:block; font-size:14px; letter-spacing:.2px; }
+    .brand__title small{ display:block; color:var(--muted); font-size:12px; margin-top:2px; }
+
+    .user{
+      margin-top:14px;
+      padding:14px;
+      border-radius: var(--radius2);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(var(--blur));
+    }
+    .user__row{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid var(--line);
+      font-size:12px;
+      color: var(--muted);
+    }
+    .dot{
+      width:10px; height:10px; border-radius:999px;
+      background: var(--ok);
+      box-shadow: 0 0 0 3px rgba(110,243,182,.15);
+    }
+
+    .user__name{
+      margin:10px 0 0;
+      font-size:13px;
+      color: var(--muted);
+    }
+    .user__name b{ color:var(--text); font-size:14px; }
+
+    .side__nav{
+      margin-top:14px;
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .navbtn{
+      width:100%;
+      text-align:left;
+      padding:12px 12px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      cursor:pointer;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      transition: .15s ease;
+    }
+    .navbtn:hover{
+      background: rgba(255,255,255,.06);
+      border-color: var(--line);
+      color: var(--text);
+    }
+    .navbtn[aria-current="page"]{
+      background: linear-gradient(135deg, rgba(138,233,255,.16), rgba(182,166,255,.10));
+      border-color: rgba(255,255,255,.14);
+      color: var(--text);
+      box-shadow: 0 12px 24px rgba(0,0,0,.18);
+    }
+    .navbtn__meta{
+      display:flex; align-items:center; gap:8px;
+      font-size:12px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+    .badge{
+      display:inline-flex; align-items:center; justify-content:center;
+      min-width:22px;
+      height:18px;
+      padding:0 6px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-size:11px;
+    }
+
+    .side__footer{
+      position:absolute;
+      left:14px; right:14px; bottom:14px;
+      padding:12px;
+      border-radius: var(--radius2);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+    }
+    .tinybtn{
+      cursor:pointer;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      padding:10px 12px;
+      color: var(--text);
+      font-size:12px;
+      transition:.15s ease;
+      white-space:nowrap;
+    }
+    .tinybtn:hover{ background: rgba(255,255,255,.10); }
+
+    /* Main */
+    .main{
+      padding:18px 18px 28px;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      padding:16px;
+      border-radius: var(--radius2);
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(var(--blur));
+      box-shadow: var(--shadow);
+    }
+    .topbar__left h1{
+      margin:0;
+      font-size:16px;
+      letter-spacing:.2px;
+    }
+    .topbar__left p{
+      margin:6px 0 0;
+      font-size:13px;
+      color: var(--muted);
+      max-width: 70ch;
+    }
+
+    .topbar__right{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .search{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      min-width: 320px;
+    }
+    .search input{
+      border:0; outline:0; background:transparent;
+      width:100%;
+      color: var(--text);
+      font-size:13px;
+    }
+    .search input::placeholder{ color: rgba(255,255,255,.45); }
+    [data-theme="light"] .search input::placeholder{ color: rgba(10,20,40,.45); }
+
+    .grid{
+      margin-top:14px;
+      display:grid;
+      grid-template-columns: 1.55fr .95fr;
+      gap:14px;
+      align-items:start;
+    }
+
+    .card{
+      border-radius: var(--radius2);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      backdrop-filter: blur(var(--blur));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card__head{
+      padding:14px 14px 10px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+    }
+    .card__head h2{
+      margin:0;
+      font-size:13px;
+      letter-spacing:.2px;
+    }
+    .card__head small{
+      display:block;
+      margin-top:4px;
+      color: var(--muted);
+      font-size:12px;
+    }
+    .card__body{ padding:14px; }
+
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:10px;
+    }
+    .kpi{
+      padding:12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+    }
+    .kpi b{ display:block; font-size:15px; }
+    .kpi span{ display:block; font-size:12px; color: var(--muted); margin-top:4px; }
+    .kpi em{
+      font-style:normal;
+      font-family: var(--mono);
+      font-size:12px;
+      color: var(--muted);
+      display:block;
+      margin-top:6px;
+    }
+
+    .tabs{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .tab{
+      cursor:pointer;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      padding:8px 10px;
+      font-size:12px;
+      color: var(--muted);
+      transition:.15s ease;
+    }
+    .tab:hover{ background: rgba(255,255,255,.10); color: var(--text); }
+    .tab[aria-selected="true"]{
+      background: linear-gradient(135deg, rgba(138,233,255,.18), rgba(182,166,255,.12));
+      color: var(--text);
+      border-color: rgba(255,255,255,.14);
+    }
+
+    .table{
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      overflow:hidden;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.04);
+    }
+    .table th, .table td{
+      padding:10px 10px;
+      font-size:12px;
+      border-bottom: 1px solid var(--line);
+      text-align:left;
+      vertical-align:top;
+    }
+    .table th{
+      font-size:11px;
+      color: var(--muted);
+      background: rgba(255,255,255,.04);
+      letter-spacing:.18px;
+      text-transform: uppercase;
+    }
+    .table tr:last-child td{ border-bottom:0; }
+    .grade{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width: 28px;
+      height: 22px;
+      padding:0 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      font-family: var(--mono);
+      font-size:12px;
+    }
+    .g5{ border-color: rgba(110,243,182,.35); box-shadow: 0 0 0 3px rgba(110,243,182,.08); }
+    .g4{ border-color: rgba(138,233,255,.30); box-shadow: 0 0 0 3px rgba(138,233,255,.08); }
+    .g3{ border-color: rgba(255,211,122,.35); box-shadow: 0 0 0 3px rgba(255,211,122,.08); }
+    .g2{ border-color: rgba(255,122,162,.35); box-shadow: 0 0 0 3px rgba(255,122,162,.08); }
+
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .item{
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      padding:12px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      justify-content:space-between;
+    }
+    .item__left{ display:flex; gap:10px; align-items:flex-start; }
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      font-size:11px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+    .tag .dot{ width:8px; height:8px; box-shadow:none; }
+    .item__title{
+      margin:0;
+      font-size:13px;
+    }
+    .item__sub{
+      margin:4px 0 0;
+      color: var(--muted);
+      font-size:12px;
+      line-height:1.35;
+    }
+    .item__right{
+      display:flex; flex-direction:column; gap:8px; align-items:flex-end;
+      min-width: 120px;
+    }
+    .due{
+      font-family: var(--mono);
+      font-size:11px;
+      color: var(--muted);
+    }
+    .cta{
+      cursor:pointer;
+      padding:9px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      font-size:12px;
+      transition:.15s ease;
+    }
+    .cta:hover{ background: rgba(255,255,255,.12); }
+
+    .split{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+
+    .mini{
+      padding:12px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+    }
+    .mini h3{
+      margin:0;
+      font-size:12px;
+      color: var(--text);
+    }
+    .mini p{
+      margin:6px 0 0;
+      font-size:12px;
+      color: var(--muted);
+      line-height:1.35;
+    }
+
+    .progress{
+      height:10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      overflow:hidden;
+      margin-top:10px;
+    }
+    .progress > i{
+      display:block;
+      height:100%;
+      width: 0%;
+      background: linear-gradient(90deg, rgba(138,233,255,.85), rgba(182,166,255,.85));
+    }
+
+    .wizard{
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .step{
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      padding:12px;
+      display:flex; gap:12px; align-items:flex-start; justify-content:space-between;
+    }
+    .step__left b{ display:block; font-size:12px; }
+    .step__left span{ display:block; font-size:12px; color: var(--muted); margin-top:4px; line-height:1.35; }
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.05);
+      font-size:11px;
+      color: var(--muted);
+      white-space:nowrap;
+      font-family: var(--mono);
+    }
+    .chip--ok{ color: rgba(110,243,182,.95); border-color: rgba(110,243,182,.35); background: rgba(110,243,182,.08); }
+    .chip--todo{ color: rgba(255,211,122,.95); border-color: rgba(255,211,122,.35); background: rgba(255,211,122,.08); }
+    .chip--lock{ color: rgba(255,255,255,.70); }
+
+    .hint{
+      border-radius: 16px;
+      border: 1px dashed rgba(255,255,255,.18);
+      background: rgba(255,255,255,.03);
+      padding:12px;
+      color: var(--muted);
+      font-size:12px;
+      line-height:1.4;
+    }
+
+    .modal{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+    }
+    .modal[open]{ display:flex; }
+    .modal__box{
+      width:min(820px, 100%);
+      border-radius: var(--radius2);
+      background: rgba(20,28,50,.82);
+      border: 1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    [data-theme="light"] .modal__box{
+      background: rgba(255,255,255,.88);
+    }
+    .modal__head{
+      padding:14px 14px 10px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    }
+    .modal__head h2{ margin:0; font-size:13px; }
+    .modal__head p{ margin:6px 0 0; font-size:12px; color: var(--muted); }
+    .modal__body{ padding:14px; }
+    .modal__foot{
+      padding:12px 14px;
+      border-top:1px solid var(--line);
+      display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
+    }
+    .primary{
+      background: linear-gradient(135deg, rgba(138,233,255,.22), rgba(182,166,255,.16));
+      border-color: rgba(255,255,255,.18);
+      color: var(--text);
+    }
+
+    .sr-only{
+      position:absolute !important;
+      width:1px;height:1px;
+      padding:0;margin:-1px;
+      overflow:hidden;clip:rect(0,0,0,0);
+      white-space:nowrap;border:0;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px){
+      .app{ grid-template-columns: 1fr; }
+      .side{
+        position:relative;
+        height:auto;
+        border-right:0;
+        border-bottom:1px solid var(--line);
+      }
+      .side__footer{
+        position:relative;
+        left:auto; right:auto; bottom:auto;
+        margin-top:12px;
+      }
+      .grid{ grid-template-columns: 1fr; }
+      .kpis{ grid-template-columns: repeat(2,1fr); }
+      .search{ min-width: 240px; flex:1; }
+    }
+
+    @media (max-width: 520px){
+      .kpis{ grid-template-columns: 1fr; }
+      .split{ grid-template-columns: 1fr; }
+      .topbar{ padding:12px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app" id="app" data-theme="dark">
+    <!-- Sidebar -->
+    <aside class="side" aria-label="Навигация">
+      <div class="brand" role="banner">
+        <div class="brand__logo" aria-hidden="true"></div>
+        <div class="brand__title">
+          <b>ФГИС «Моя школа»</b>
+          <small>Единое окно: школа, ЕГЭ, ресурсы, поступление</small>
+        </div>
+      </div>
+
+      <section class="user" aria-label="Профиль">
+        <div class="user__row">
+          <div class="pill" title="Статус входа">
+            <span class="dot" aria-hidden="true"></span>
+            <span id="authStatus">Вход через Госуслуги: подтверждён</span>
+          </div>
+
+          <span class="pill" title="Роль в интерфейсе">
+            <span id="roleLabel">Роль: Ученик</span>
+          </span>
+        </div>
+
+        <p class="user__name">
+          <b id="userName">Алексей С.</b><br />
+          10 класс · Лицей № 0000 · Профиль: физмат
+        </p>
+
+        <div class="split" style="margin-top:10px;">
+          <button class="tinybtn" type="button" id="roleToggle" aria-pressed="false" title="Переключить взгляд: ученик/родитель">
+            Переключить: Ученик/Родитель
+          </button>
+          <button class="tinybtn" type="button" id="openGos" title="Показать склейку с Госуслугами">
+            Профиль Госуслуг
+          </button>
+        </div>
+      </section>
+
+      <nav class="side__nav" aria-label="Разделы">
+        <button class="navbtn" type="button" data-view="dashboard" aria-current="page">
+          <span>Единое окно</span>
+          <span class="navbtn__meta"><span class="badge" id="badgeAll">7</span></span>
+        </button>
+
+        <button class="navbtn" type="button" data-view="study">
+          <span>Успеваемость и ДЗ</span>
+          <span class="navbtn__meta"><span class="badge" id="badgeHw">3</span></span>
+        </button>
+
+        <button class="navbtn" type="button" data-view="ege">
+          <span>ЕГЭ: аналитика и рекомендации</span>
+          <span class="navbtn__meta"><span class="badge">2</span></span>
+        </button>
+
+        <button class="navbtn" type="button" data-view="apply">
+          <span>Поступление в вуз онлайн</span>
+          <span class="navbtn__meta"><span class="badge">1</span></span>
+        </button>
+
+        <button class="navbtn" type="button" data-view="opps">
+          <span>Возможности</span>
+          <span class="navbtn__meta"><span class="badge" id="badgeOpp">4</span></span>
+        </button>
+
+        <button class="navbtn" type="button" data-view="resources">
+          <span>Цифровые ресурсы</span>
+          <span class="navbtn__meta"><span class="badge">12</span></span>
+        </button>
+      </nav>
+
+      <div class="side__footer" aria-label="Быстрые действия">
+        <button class="tinybtn" type="button" id="themeToggle" aria-pressed="false">
+          Тема: Тёмная
+        </button>
+        <button class="tinybtn" type="button" id="openHelp">
+          Справка и подсказки
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <header class="topbar" aria-label="Шапка">
+        <div class="topbar__left">
+          <h1 id="viewTitle">Единое окно</h1>
+          <p id="viewDesc">
+            Здесь собраны успеваемость и домашние задания, рекомендации по подготовке к ЕГЭ, уведомления о новых возможностях,
+            а также суперсервис «Поступление в вуз онлайн» (через Госуслуги).
+          </p>
+        </div>
+
+        <div class="topbar__right">
+          <label class="sr-only" for="globalSearch">Поиск</label>
+          <div class="search" role="search">
+            <span class="pill" style="padding:6px 10px;">⌕</span>
+            <input id="globalSearch" type="search" placeholder="Поиск: предмет, задание, вуз, олимпиада, курс..." />
+          </div>
+          <button class="tinybtn" type="button" id="openNotif">
+            Уведомления <span class="badge" id="notifCount" style="margin-left:8px;">4</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- View: Dashboard -->
+      <section class="grid view" data-view="dashboard" aria-label="Единое окно">
+        <section class="card">
+          <div class="card__head">
+            <div>
+              <h2>Сводка по ученику</h2>
+              <small>Пустышка демонстрирует «всё в одном окне» для ученика и родителей</small>
+            </div>
+            <div class="tabs" role="tablist" aria-label="Сводка">
+              <button class="tab" type="button" role="tab" aria-selected="true" data-tab="week">Неделя</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-tab="month">Месяц</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-tab="term">Триместр</button>
+            </div>
+          </div>
+
+          <div class="card__body">
+            <div class="kpis" aria-label="Ключевые показатели">
+              <div class="kpi">
+                <b id="kpiAvg">4.4</b>
+                <span>Средний балл</span>
+                <em>по всем предметам</em>
+              </div>
+              <div class="kpi">
+                <b id="kpiHw">3</b>
+                <span>ДЗ на ближайшие 3 дня</span>
+                <em>есть приоритеты</em>
+              </div>
+              <div class="kpi">
+                <b id="kpiEge">72</b>
+                <span>Прогноз ЕГЭ (профиль)</span>
+                <em>математика/физика</em>
+              </div>
+              <div class="kpi">
+                <b id="kpiOpp">4</b>
+                <span>Новые возможности</span>
+                <em>олимпиады/курсы</em>
+              </div>
+            </div>
+
+            <div class="split" style="margin-top:12px;">
+              <div class="mini">
+                <h3>Рекомендация на сегодня</h3>
+                <p id="todayTip">
+                  Слабое место: «Тригонометрия и уравнения». План: 25 минут теория + 10 задач базового уровня + 2 задачи повышенного.
+                  Пауза 5 минут. Повторить вечером «ошибки недели».
+                </p>
+                <div class="progress" aria-label="Прогресс плана на день" title="Заглушка прогресса">
+                  <i id="todayProg" style="width: 42%;"></i>
+                </div>
+              </div>
+
+              <div class="mini">
+                <h3>Суперсервис: поступление в вуз</h3>
+                <p>
+                  Профиль подтянут через Госуслуги (паспорт/СНИЛС/льготы — как концепт). Дальше — выбор программ, сравнение конкурсных
+                  списков и подача заявления онлайн.
+                </p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                  <button class="cta primary" type="button" data-open="apply" title="Переход в раздел подачи документов">
+                    Открыть «Поступление онлайн»
+                  </button>
+                  <button class="cta" type="button" id="openDocs" title="Показать заглушку документов">
+                    Документы (заглушка)
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="card">
+          <div class="card__head">
+            <div>
+              <h2>Ближайшие дела</h2>
+              <small>Домашние задания, контрольные, дедлайны</small>
+            </div>
+            <button class="tinybtn" type="button" data-open="study">Открыть журнал</button>
+          </div>
+          <div class="card__body">
+            <div class="list" id="upcomingList" aria-label="Список дел">
+              <!-- JS заполнит -->
+            </div>
+            <div class="hint" style="margin-top:12px;">
+              Для родителей здесь же можно показывать «красные флажки»: пропуски, падающий тренд, риск сорвать дедлайн, рекомендации по режиму.
+              В макете — визуальная демонстрация без реальной логики.
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- View: Study -->
+      <section class="grid view" data-view="study" aria-label="Успеваемость и домашние задания" hidden>
+        <section class="card">
+          <div class="card__head">
+            <div>
+              <h2>Успеваемость (в одном окне)</h2>
+              <small>Оценки, комментарии учителя, динамика — и для ученика, и для родителей</small>
+            </div>
+            <div class="tabs" role="tablist" aria-label="Фильтр предметов">
+              <button class="tab" type="button" role="tab" aria-selected="true" data-subject="all">Все</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-subject="math">Математика</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-subject="phys">Физика</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-subject="rus">Русский</button>
+            </div>
+          </div>
+          <div class="card__body">
+            <table class="table" aria-label="Таблица оценок" id="gradesTable">
+              <thead>
+                <tr>
+                  <th style="width:18%;">Дата</th>
+                  <th style="width:22%;">Предмет</th>
+                  <th style="width:15%;">Оценка</th>
+                  <th>Тема / комментарий</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- JS заполнит -->
+              </tbody>
+            </table>
+
+            <div class="hint" style="margin-top:12px;">
+              Идея «одного окна»: родители не бегают по разным чатам/дневникам/таблицам. Здесь же — ссылки на задания и материалы, а также аналитика.
+            </div>
+          </div>
+        </section>
+
+        <aside class="card">
+          <div class="card__head">
+            <div>
+              <h2>Домашние задания</h2>
+              <small>С приоритетами и кнопкой «открыть материал»</small>
+            </div>
+            <button class="tinybtn" type="button" id="addMockHw">+ Добавить ДЗ (пустышка)</button>
+          </div>
+          <div class="card__body">
+            <div class="list" id="hwList" aria-label="Список домашних заданий">
+              <!-- JS заполнит -->
+            </div>
+
+            <div class="hint" style="margin-top:12px;">
+              В реальном продукте сюда удобно добавить: чек-лист, оценку трудоёмкости, напоминания, автоподбор «цифрового ресурса» под тему.
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- View: EGE -->
+      <section class="grid view" data-view="ege" aria-label="ЕГЭ: аналитика и рекомендации" hidden>
+        <section class="card">
+          <div class="card__head">
+            <div>
+              <h2>ЕГЭ: анализ результатов и персональные рекомендации</h2>
+              <small>Пустышка: «на основе данных» (пробники/темы/ошибки) формируется план подготовки</small>
+            </div>
+            <button class="tinybtn" type="button" id="regenPlan">Пересчитать план (пустышка)</button>
+          </div>
+
+          <div class="card__body">
+            <div class="split">
+              <div class="mini">
+                <h3>Профиль: математика</h3>
+                <p>
+                  Пробник #3: 68/100. Ошибки: производная, тригонометрия, параметры. Сильные темы: планиметрия, вероятности.
+                </p>
+                <div class="progress" title="Заглушка прогресса по математике">
+                  <i id="progMath" style="width: 58%;"></i>
+                </div>
+              </div>
+              <div class="mini">
+                <h3>Профиль: физика</h3>
+                <p>
+                  Пробник #2: 74/100. Ошибки: оптика, термодинамика. Сильные темы: механика, электричество (основы).
+                </p>
+                <div class="progress" title="Заглушка прогресса по физике">
+                  <i id="progPhys" style="width: 62%;"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="mini" style="margin-top:12px;">
+              <h3>План подготовки на 14 дней (пример)</h3>
+              <p id="planText">
+                День 1–2: тригонометрия (уравнения, преобразования) + разбор ошибок пробника.<br/>
+                День 3: физика — оптика (линзы, формулы) + 20 задач.<br/>
+                День 4: математика — производная и применение (экстремумы).<br/>
+                День 5: русский — сочинение: структура и клише (15 примеров).<br/>
+                Далее: чередование «слабое место → практика → мини-пробник → разбор».
+              </p>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                <button class="cta primary" type="button" data-open="resources">Подобрать ресурсы под план</button>
+                <button class="cta" type="button" id="openMistakes">Список ошибок (пустышка)</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="card">
+          <div class="card__head">
+            <div>
+              <h2>Рекомендации «что делать дальше»</h2>
+              <small>Стили: для ученика и для родителей</small>
+            </div>
+            <span class="pill"><span class="dot" style="background:var(--warn)"></span>Фокус недели</span>
+          </div>
+          <div class="card__body">
+            <div class="list" id="recoList" aria-label="Список рекомендаций">
+              <!-- JS заполнит -->
+            </div>
+
+            <div class="hint" style="margin-top:12px;">
+              Смысл для родителей: не «контролировать ради контроля», а видеть понятные действия и ожидаемый эффект.
+              Смысл для ученика: короткие, выполнимые шаги.
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- View: Apply -->
+      <section class="grid view" data-view="apply" aria-label="Поступление в вуз онлайн" hidden>
+        <section class="card">
+          <div class="card__head">
+            <div>
+              <h2>Суперсервис «Поступление в вуз онлайн»</h2>
+              <small>Склейка: данные из «Моей школы» + подтверждённая учётка Госуслуг + подача заявлений</small>
+            </div>
+            <span class="pill"><span class="dot"></span>Через Госуслуги</span>
+          </div>
+
+          <div class="card__body">
+            <div class="split">
+              <div class="mini">
+                <h3>Данные профиля (пустышка)</h3>
+                <p>
+                  Паспорт: подтянут · СНИЛС: подтянут · Льготы: нет · Аттестат: ожидается.<br/>
+                  ЕГЭ: прогноз 72 (мат), 74 (физ), 86 (рус).
+                </p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                  <button class="cta" type="button" id="openGos2">Открыть профиль Госуслуг</button>
+                  <button class="cta" type="button" id="openConsent">Согласия и доступы</button>
+                </div>
+              </div>
+              <div class="mini">
+                <h3>Подбор вузов (пример)</h3>
+                <p>
+                  На основе предметов и интересов предлагаются программы: «Прикладная математика», «Информатика», «Инженерия».
+                  Можно сравнить проходные баллы (как концепт), дедлайны, условия общежития и гранты.
+                </p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                  <button class="cta primary" type="button" id="startApply">Начать подачу заявления</button>
+                  <button class="cta" type="button" id="openCompare">Сравнение программ</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="mini" style="margin-top:12px;">
+              <h3>Статус подачи (макет)</h3>
+              <div class="wizard" aria-label="Шаги подачи">
+                <div class="step">
+                  <div class="step__left">
+                    <b>1) Подтверждение личности</b>
+                    <span>ЕСИА (Госуслуги): подтверждённая запись. Данные предзаполнены.</span>
+                  </div>
+                  <span class="chip chip--ok">OK</span>
+                </div>
+
+                <div class="step">
+                  <div class="step__left">
+                    <b>2) Выбор направлений/вузов</b>
+                    <span>Списки, сроки приёма, условия, приоритеты и квоты — всё в форме.</span>
+                  </div>
+                  <span class="chip chip--todo">TODO</span>
+                </div>
+
+                <div class="step">
+                  <div class="step__left">
+                    <b>3) Документы и согласия</b>
+                    <span>Согласие на обработку, заявление, прикрепление/подтягивание документов.</span>
+                  </div>
+                  <span class="chip chip--lock">LOCK</span>
+                </div>
+
+                <div class="step">
+                  <div class="step__left">
+                    <b>4) Отправка и отслеживание статуса</b>
+                    <span>Уведомления о статусе заявления и новых требованиях (оригинал/согласие и т.п.).</span>
+                  </div>
+                  <span class="chip chip--lock">LOCK</span>
+                </div>
+              </div>
+
+              <div class="hint" style="margin-top:12px;">
+                Здесь хорошо видно «желание потребителя»: подать документы онлайн и не утонуть в бумагах и дедлайнах.
+                Макет показывает UX-идею, без реальной интеграции.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="card">
+          <div class="card__head">
+            <div>
+              <h2>Уведомления по поступлению</h2>
+              <small>Дедлайны, статус заявления, новые квоты, гранты</small>
+            </div>
+            <button class="tinybtn" type="button" data-open="opps">Все возможности</button>
+          </div>
+          <div class="card__body">
+            <div class="list" id="applyNotif" aria-label="Уведомления по поступлению">
+              <!-- JS заполнит -->
+            </div>
+
+            <div class="hint" style="margin-top:12px;">
+              Для родителей: важные уведомления можно «закреплять», настраивать частоту, включать режим «только критичные».
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- View: Opportunities -->
+      <section class="grid view" data-view="opps" aria-label="Возможности: олимпиады, курсы, гранты" hidden>
+        <section class="card">
+          <div class="card__head">
+            <div>
+              <h2>Новые возможности</h2>
+              <small>Олимпиады, курсы, гранты — с уведомлениями и рекомендациями</small>
+            </div>
+            <div class="tabs" role="tablist" aria-label="Фильтр возможностей">
+              <button class="tab" type="button" role="tab" aria-selected="true" data-opp="all">Все</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-opp="olymp">Олимпиады</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-opp="course">Курсы</button>
+              <button class="tab" type="button" role="tab" aria-selected="false" data-opp="grant">Гранты</button>
+            </div>
+          </div>
+          <div class="card__body">
+            <div class="list" id="oppList" aria-label="Список возможностей">
+              <!-- JS заполнит -->
+            </div>
+          </div>
+        </section>
+
+        <aside class="card">
+          <div class="card__head">
+            <div>
+              <h2>Настройка уведомлений</h2>
+              <small>Макет: гибкие подписки по интересам и важности</small>
+            </div>
+            <button class="tinybtn" type="button" id="savePrefs">Сохранить (пустышка)</button>
+          </div>
+          <div class="card__body">
+            <div class="mini">
+              <h3>Что считать важным</h3>
+              <p>
+                <label style="display:block; margin-top:8px;">
+                  <input type="checkbox" checked /> Дедлайны (все)
+                </label>
+                <label style="display:block; margin-top:8px;">
+                  <input type="checkbox" checked /> Олимпиады по профилю (мат/физ/инф)
+                </label>
+                <label style="display:block; margin-top:8px;">
+                  <input type="checkbox" /> Курсы «для портфолио»
+                </label>
+                <label style="display:block; margin-top:8px;">
+                  <input type="checkbox" checked /> Гранты/стипендии
+                </label>
+              </p>
+            </div>
+
+            <div class="hint" style="margin-top:12px;">
+              Главная идея: «не пропустить полезное», но и не получать спам. Тут легко показать режим для родителей и для ученика отдельно.
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- View: Resources -->
+      <section class="grid view" data-view="resources" aria-label="Цифровые образовательные ресурсы" hidden>
+        <section class="card">
+          <div class="card__head">
+            <div>
+              <h2>Цифровые образовательные ресурсы</h2>
+              <small>Подбор материалов под ДЗ и подготовку к ЕГЭ (макет)</small>
+            </div>
+            <button class="tinybtn" type="button" id="openResourceHub">Открыть каталог (пустышка)</button>
+          </div>
+
+          <div class="card__body">
+            <div class="split">
+              <div class="mini">
+                <h3>Под задачу</h3>
+                <p>
+                  «ДЗ по физике: оптика» → видео 12 мин → конспект → 15 задач → мини-тест.
+                </p>
+                <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                  <button class="cta primary" type="button" id="mockPick1">Подобрать под ДЗ</button>
+                  <button class="cta" type="button" id="mockPick2">Подобрать под ЕГЭ</button>
+                </div>
+              </div>
+              <div class="mini">
+                <h3>Рекомендательная логика (в UX)</h3>
+                <p>
+                  На экране видно: почему рекомендовано (ошибки, тема, уровень, время), сколько займёт и какой ожидаемый эффект.
+                </p>
+                <div class="progress" title="Заглушка уверенности подбора">
+                  <i style="width: 76%;"></i>
+                </div>
+              </div>
+            </div>
+
+            <table class="table" aria-label="Примеры ресурсов" style="margin-top:12px;">
+              <thead>
+                <tr>
+                  <th style="width:30%;">Тема</th>
+                  <th style="width:22%;">Формат</th>
+                  <th style="width:18%;">Уровень</th>
+                  <th>Почему это здесь</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Тригонометрия: уравнения</td>
+                  <td>Видео + практика</td>
+                  <td><span class="tag"><span class="dot" style="background:var(--warn)"></span>Укрепить</span></td>
+                  <td>Ошибки в пробнике + ближайшая контрольная</td>
+                </tr>
+                <tr>
+                  <td>Физика: линзы и оптика</td>
+                  <td>Конспект + задачи</td>
+                  <td><span class="tag"><span class="dot" style="background:var(--warn)"></span>Укрепить</span></td>
+                  <td>Провал на теме «оптика», рекомендовано 20 задач</td>
+                </tr>
+                <tr>
+                  <td>Русский: сочинение ЕГЭ</td>
+                  <td>Шаблон + проверка</td>
+                  <td><span class="tag"><span class="dot" style="background:var(--ok)"></span>Поддержать</span></td>
+                  <td>Сильная сторона, удерживать навык раз в неделю</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="hint" style="margin-top:12px;">
+              Здесь же можно показывать интеграцию с «Моей школой»: кликом открываем материал прямо из ДЗ/ошибки/темы.
+            </div>
+          </div>
+        </section>
+
+        <aside class="card">
+          <div class="card__head">
+            <div>
+              <h2>Интеграции (визуально)</h2>
+              <small>Как будто подключены системы и сервисы</small>
+            </div>
+            <span class="pill"><span class="dot"></span>Синхронизация</span>
+          </div>
+          <div class="card__body">
+            <div class="list" aria-label="Список интеграций">
+              <div class="item">
+                <div class="item__left">
+                  <span class="tag"><span class="dot"></span>Госуслуги</span>
+                  <div>
+                    <p class="item__title">ЕСИА и документы</p>
+                    <p class="item__sub">Предзаполнение профиля, согласия, статусы заявлений</p>
+                  </div>
+                </div>
+                <div class="item__right">
+                  <span class="due">Статус: подключено</span>
+                  <button class="cta" type="button" id="openGos3">Посмотреть</button>
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="item__left">
+                  <span class="tag"><span class="dot" style="background:var(--brand)"></span>Школа</span>
+                  <div>
+                    <p class="item__title">Эл. журнал и расписание</p>
+                    <p class="item__sub">Оценки, ДЗ, дедлайны, комментарии учителя</p>
+                  </div>
+                </div>
+                <div class="item__right">
+                  <span class="due">Статус: подключено</span>
+                  <button class="cta" type="button" data-open="study">Открыть</button>
+                </div>
+              </div>
+
+              <div class="item">
+                <div class="item__left">
+                  <span class="tag"><span class="dot" style="background:var(--brand2)"></span>Вуз</span>
+                  <div>
+                    <p class="item__title">Суперсервис поступления</p>
+                    <p class="item__sub">Заявления, конкурсные списки, уведомления</p>
+                  </div>
+                </div>
+                <div class="item__right">
+                  <span class="due">Статус: демо</span>
+                  <button class="cta" type="button" data-open="apply">Открыть</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="hint" style="margin-top:12px;">
+              В макете это «красивые заглушки», но визуально демонстрируют связку «школа ↔ ресурсы ↔ поступление ↔ Госуслуги».
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modals -->
+  <dialog class="modal" id="modalGos">
+    <div class="modal__box" role="dialog" aria-modal="true" aria-label="Профиль Госуслуг">
+      <div class="modal__head">
+        <div>
+          <h2>Госуслуги — профиль и предзаполнение (макет)</h2>
+          <p>Заглушка: демонстрация того, что данные подтянуты и используются в «Поступление в вуз онлайн».</p>
+        </div>
+        <button class="tinybtn" type="button" data-close>Закрыть</button>
+      </div>
+      <div class="modal__body">
+        <div class="split">
+          <div class="mini">
+            <h3>Учётная запись</h3>
+            <p>
+              Статус: подтверждённая<br/>
+              Телефон: +7 *** ***-**-**<br/>
+              Почта: a***@mail.ru<br/>
+              Адрес: (скрыт)
+            </p>
+          </div>
+          <div class="mini">
+            <h3>Документы (как концепт)</h3>
+            <p>
+              Паспорт: подтянут<br/>
+              СНИЛС: подтянут<br/>
+              ИНН: опционально<br/>
+              Согласия: управляемые (для ученика/родителя)
+            </p>
+          </div>
+        </div>
+
+        <div class="hint" style="margin-top:12px;">
+          Практическая ценность для пользователя: меньше ручного ввода, меньше ошибок в данных, прозрачные согласия, понятный статус.
+        </div>
+      </div>
+      <div class="modal__foot">
+        <button class="cta" type="button" id="fakeRevoke">Отозвать доступ (пустышка)</button>
+        <button class="cta primary" type="button" data-open="apply">Перейти к поступлению</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="modalNotif">
+    <div class="modal__box" role="dialog" aria-modal="true" aria-label="Уведомления">
+      <div class="modal__head">
+        <div>
+          <h2>Уведомления</h2>
+          <p>Макет: единая лента событий — школа, ЕГЭ, олимпиады, поступление.</p>
+        </div>
+        <button class="tinybtn" type="button" data-close>Закрыть</button>
+      </div>
+      <div class="modal__body">
+        <div class="list" id="notifList" aria-label="Список уведомлений"></div>
+      </div>
+      <div class="modal__foot">
+        <button class="cta" type="button" id="markAllRead">Отметить как прочитанное (пустышка)</button>
+        <button class="cta primary" type="button" data-open="opps">Открыть «Возможности»</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="modalHelp">
+    <div class="modal__box" role="dialog" aria-modal="true" aria-label="Справка">
+      <div class="modal__head">
+        <div>
+          <h2>Что здесь демонстрируется</h2>
+          <p>Короткая «памятка», чтобы макет легко защищать на показе.</p>
+        </div>
+        <button class="tinybtn" type="button" data-close>Закрыть</button>
+      </div>
+      <div class="modal__body">
+        <div class="mini">
+          <h3>Ключевые пользовательские желания (и где они на экране)</h3>
+          <p>
+            1) Вся успеваемость и ДЗ в одном окне: раздел «Успеваемость и ДЗ» + сводка на «Едином окне».<br/>
+            2) Рекомендации по ЕГЭ: раздел «ЕГЭ» с планом на 14 дней и списком рекомендаций.<br/>
+            3) Подать документы в вузы онлайн: раздел «Поступление» с шагами и уведомлениями.<br/>
+            4) Уведомления о возможностях: раздел «Возможности» + лента уведомлений.
+          </p>
+        </div>
+        <div class="hint" style="margin-top:12px;">
+          Файл автономный: без внешних библиотек, все данные — заглушки в JS. Можно быстро менять тексты, цифры, сценарии.
+        </div>
+      </div>
+      <div class="modal__foot">
+        <button class="cta primary" type="button" data-open="dashboard">Перейти на «Единое окно»</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="modal" id="modalDocs">
+    <div class="modal__box" role="dialog" aria-modal="true" aria-label="Документы (заглушка)">
+      <div class="modal__head">
+        <div>
+          <h2>Документы (заглушка)</h2>
+          <p>Пример: какие сущности обычно нужны для поступления, и как они «подтягиваются».</p>
+        </div>
+        <button class="tinybtn" type="button" data-close>Закрыть</button>
+      </div>
+      <div class="modal__body">
+        <table class="table" aria-label="Таблица документов">
+          <thead>
+            <tr>
+              <th style="width:35%;">Документ</th>
+              <th style="width:20%;">Источник</th>
+              <th style="width:20%;">Статус</th>
+              <th>Примечание</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Паспорт</td>
+              <td>Госуслуги</td>
+              <td><span class="chip chip--ok">OK</span></td>
+              <td>Предзаполнение анкеты</td>
+            </tr>
+            <tr>
+              <td>СНИЛС</td>
+              <td>Госуслуги</td>
+              <td><span class="chip chip--ok">OK</span></td>
+              <td>Проверка идентичности</td>
+            </tr>
+            <tr>
+              <td>Аттестат</td>
+              <td>Школа</td>
+              <td><span class="chip chip--todo">TODO</span></td>
+              <td>Станет доступен после выпуска</td>
+            </tr>
+            <tr>
+              <td>Согласие на обработку</td>
+              <td>Портал</td>
+              <td><span class="chip chip--todo">TODO</span></td>
+              <td>Подписывается онлайн</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal__foot">
+        <button class="cta" type="button" data-close>Закрыть</button>
+        <button class="cta primary" type="button" data-open="apply">Вернуться к подаче</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    /**
+     * Автономная «красивая пустышка».
+     * Все данные ниже — мок-объекты, чтобы UI выглядел как живой продукт.
+     * Реальная интеграция не реализована (и не требуется для макета).
+     */
+
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+    const state = {
+      view: "dashboard",
+      theme: localStorage.getItem("mock_theme") || "dark",
+      role: localStorage.getItem("mock_role") || "student", // student | parent
+      subjectFilter: "all",
+      oppFilter: "all",
+      search: ""
+    };
+
+    const mock = {
+      user: { name: "Алексей С." },
+      kpis: { avg: 4.4, hw: 3, ege: 72, opp: 4 },
+      grades: [
+        { date:"Пн", subject:"Математика", key:"math", grade:5, topic:"Контрольная: производная. Отлично, но внимательнее с преобразованиями." },
+        { date:"Вт", subject:"Физика", key:"phys", grade:4, topic:"Оптика: линзы. Ошибка в знаке и единицах измерения." },
+        { date:"Ср", subject:"Русский", key:"rus", grade:5, topic:"Сочинение: структура выдержана, хорошая аргументация." },
+        { date:"Чт", subject:"Математика", key:"math", grade:3, topic:"Параметры: пропущен случай, нужна отработка шаблонов." },
+        { date:"Пт", subject:"Физика", key:"phys", grade:4, topic:"Термодинамика: аккуратнее с графиками и формулами." },
+      ],
+      homework: [
+        { id:1, subject:"Математика", key:"math", title:"Тригонометрические уравнения (№ 1–12)", desc:"Решить 12 задач, отметить 3 самых сложных и принести разбор.", due:"Завтра 18:00", prio:"high" },
+        { id:2, subject:"Физика", key:"phys", title:"Оптика: линзы — задачи (№ 5–15)", desc:"10 задач + мини-конспект формул на 1 страницу.", due:"Послезавтра 18:00", prio:"mid" },
+        { id:3, subject:"Русский", key:"rus", title:"Сочинение ЕГЭ: 2 варианта", desc:"Написать 2 текста по шаблону, выделить тезисы и примеры.", due:"Через 3 дня 20:00", prio:"low" }
+      ],
+      upcoming: [
+        { kind:"ДЗ", color:"var(--warn)", title:"Математика: тригонометрия", sub:"12 задач + разбор ошибок", due:"Завтра 18:00", action:"Открыть материалы" },
+        { kind:"Контрольная", color:"var(--bad)", title:"Физика: оптика", sub:"Подготовить формулы и типовые задачи", due:"Пт 09:00", action:"План подготовки" },
+        { kind:"Дедлайн", color:"var(--brand)", title:"Пробник ЕГЭ (математика)", sub:"Мини-пробник на 60 минут", due:"Сб 12:00", action:"Начать пробник" }
+      ],
+      recommendations: [
+        { audience:"student", kind:"Сделай сейчас", color:"var(--warn)", title:"10 задач на тригонометрию (база)", sub:"Цель — убрать ошибки преобразований, время: 35–45 минут." },
+        { audience:"student", kind:"Повтори", color:"var(--brand)", title:"Список ошибок недели", sub:"2–3 «типовых» ошибки переписать как правило и пример." },
+        { audience:"parent", kind:"Режим", color:"var(--ok)", title:"Короткий, но регулярный план", sub:"Лучше 45 минут ежедневно, чем 3 часа в воскресенье." },
+        { audience:"parent", kind:"Поддержка", color:"var(--warn)", title:"Сфокусироваться на 1–2 слабых темах", sub:"Не распыляться: тригонометрия + оптика на этой неделе." },
+      ],
+      applyNotifs: [
+        { kind:"Поступление", color:"var(--brand2)", title:"Открыта подача на «Инженерные направления» (демо)", sub:"Добавьте 3 приоритета и проверьте сроки.", due:"Сегодня", action:"Открыть" },
+        { kind:"Документы", color:"var(--warn)", title:"Аттестат будет доступен после выпуска", sub:"Пока достаточно профиля и согласий.", due:"Справочно", action:"Понял" }
+      ],
+      opportunities: [
+        { type:"olymp", color:"var(--brand)", title:"Олимпиада по математике (профиль)", sub:"Можно улучшить шансы на поступление (как концепт).", due:"Регистрация до: 2 недели", action:"Подписаться" },
+        { type:"course", color:"var(--ok)", title:"Курс: «Оптика за 7 занятий»", sub:"Под ЕГЭ: линзы, формулы, типовые задачи.", due:"Старт: понедельник", action:"Открыть" },
+        { type:"grant", color:"var(--brand2)", title:"Стипендия/грант для олимпиадников", sub:"Подбор по профилю и достижениям (демо).", due:"Дедлайн: месяц", action:"Проверить" },
+        { type:"olymp", color:"var(--warn)", title:"Олимпиада по физике (отбор)", sub:"Задачи по механике и оптике, уровень: средний+.", due:"Регистрация до: 10 дней", action:"Подписаться" },
+      ],
+      notifications: [
+        { color:"var(--warn)", title:"Новое ДЗ: математика (тригонометрия)", sub:"Срок: завтра 18:00" },
+        { color:"var(--brand2)", title:"Поступление онлайн: доступно предзаполнение", sub:"Проверьте профиль и согласия" },
+        { color:"var(--brand)", title:"Новая возможность: олимпиада по математике", sub:"Регистрация до 10–14 дней" },
+        { color:"var(--ok)", title:"Рекомендация ЕГЭ: план на 14 дней обновлён", sub:"Фокус недели: тригонометрия и оптика" },
+      ]
+    };
+
+    function setTheme(theme){
+      state.theme = theme;
+      $("#app").setAttribute("data-theme", theme);
+      $("#themeToggle").textContent = "Тема: " + (theme === "light" ? "Светлая" : "Тёмная");
+      $("#themeToggle").setAttribute("aria-pressed", String(theme === "light"));
+      localStorage.setItem("mock_theme", theme);
+    }
+
+    function setRole(role){
+      state.role = role;
+      const isParent = role === "parent";
+      $("#roleLabel").textContent = "Роль: " + (isParent ? "Родитель" : "Ученик");
+      $("#roleToggle").setAttribute("aria-pressed", String(isParent));
+      localStorage.setItem("mock_role", role);
+
+      // Чуть меняем тексты рекомендаций/описаний — чтобы было видно «две аудитории».
+      const desc = isParent
+        ? "Родительский вид: сводка, риски, дедлайны, понятные рекомендации и статусы (всё в одном окне)."
+        : "Ученический вид: задачи на сегодня, быстрый доступ к ДЗ, персональный план подготовки и удобная подача в вуз.";
+      const base = $("#viewDesc").dataset.baseDesc || $("#viewDesc").textContent;
+      $("#viewDesc").dataset.baseDesc = base;
+      if(state.view === "dashboard"){
+        $("#viewDesc").textContent = desc + " " + base;
+      }
+      renderRecoList();
+    }
+
+    function setView(view){
+      state.view = view;
+
+      // Навигация
+      $$(".navbtn").forEach(btn=>{
+        const is = btn.dataset.view === view;
+        btn.setAttribute("aria-current", is ? "page" : "false");
+      });
+
+      // Вьюхи
+      $$(".view").forEach(v=>{
+        v.hidden = v.dataset.view !== view;
+      });
+
+      // Заголовки/описания
+      const meta = {
+        dashboard: ["Единое окно", "Сводка: успеваемость и ДЗ, рекомендации ЕГЭ, уведомления о возможностях и быстрый вход в поступление онлайн."],
+        study: ["Успеваемость и ДЗ", "Оценки и домашние задания в одном месте: фильтры по предметам, приоритеты и быстрый доступ к материалам."],
+        ege: ["ЕГЭ: аналитика и рекомендации", "Макет персонализированного плана на основе результатов (пробники/темы/ошибки) и понятных шагов."],
+        apply: ["Поступление в вуз онлайн", "Суперсервис: данные через Госуслуги, выбор программ, документы, статусы и уведомления (демо-UX)."],
+        opps: ["Возможности", "Олимпиады, курсы и гранты: единая лента и подписки на важные события."],
+        resources: ["Цифровые образовательные ресурсы", "Каталог и подбор материалов под конкретные темы, ДЗ и слабые места для подготовки к ЕГЭ."]
+      };
+      const [t, d] = meta[view] || ["Раздел", ""];
+      $("#viewTitle").textContent = t;
+      $("#viewDesc").textContent = d;
+
+      // Подмешиваем «режим роли» в сводке
+      if(view === "dashboard"){
+        setRole(state.role);
+      }
+    }
+
+    function gradeClass(g){
+      if(g >= 5) return "grade g5";
+      if(g === 4) return "grade g4";
+      if(g === 3) return "grade g3";
+      return "grade g2";
+    }
+
+    function renderUpcoming(){
+      const box = $("#upcomingList");
+      box.innerHTML = "";
+      mock.upcoming.forEach(x=>{
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="item__left">
+            <span class="tag"><span class="dot" style="background:${x.color}"></span>${x.kind}</span>
+            <div>
+              <p class="item__title">${x.title}</p>
+              <p class="item__sub">${x.sub}</p>
+            </div>
+          </div>
+          <div class="item__right">
+            <span class="due">${x.due}</span>
+            <button class="cta" type="button" data-quick>${x.action}</button>
+          </div>
+        `;
+        box.appendChild(el);
+      });
+    }
+
+    function renderGrades(){
+      const tbody = $("#gradesTable tbody");
+      tbody.innerHTML = "";
+
+      const rows = mock.grades
+        .filter(r => state.subjectFilter === "all" ? true : r.key === state.subjectFilter)
+        .filter(r => state.search ? (r.subject + " " + r.topic).toLowerCase().includes(state.search) : true);
+
+      rows.forEach(r=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.date}</td>
+          <td>${r.subject}</td>
+          <td><span class="${gradeClass(r.grade)}">${r.grade}</span></td>
+          <td>${r.topic}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      if(rows.length === 0){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="4" style="color:var(--muted);">Нет данных по текущим фильтрам (в макете).</td>`;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function prioTag(p){
+      if(p === "high") return `<span class="tag"><span class="dot" style="background:var(--bad)"></span>Высокий</span>`;
+      if(p === "mid") return `<span class="tag"><span class="dot" style="background:var(--warn)"></span>Средний</span>`;
+      return `<span class="tag"><span class="dot" style="background:var(--ok)"></span>Низкий</span>`;
+    }
+
+    function renderHomework(){
+      const box = $("#hwList");
+      box.innerHTML = "";
+
+      const rows = mock.homework
+        .filter(r => state.subjectFilter === "all" ? true : r.key === state.subjectFilter)
+        .filter(r => state.search ? (r.subject + " " + r.title + " " + r.desc).toLowerCase().includes(state.search) : true);
+
+      rows.forEach(r=>{
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="item__left">
+            ${prioTag(r.prio)}
+            <div>
+              <p class="item__title">${r.subject}: ${r.title}</p>
+              <p class="item__sub">${r.desc}</p>
+            </div>
+          </div>
+          <div class="item__right">
+            <span class="due">${r.due}</span>
+            <button class="cta" type="button" data-open="resources">Открыть ресурс</button>
+          </div>
+        `;
+        box.appendChild(el);
+      });
+
+      if(rows.length === 0){
+        box.innerHTML = `<div class="hint">Нет ДЗ по текущим фильтрам (в макете).</div>`;
+      }
+    }
+
+    function renderRecoList(){
+      const box = $("#recoList");
+      if(!box) return;
+      box.innerHTML = "";
+
+      const audience = (state.role === "parent") ? "parent" : "student";
+      mock.recommendations
+        .filter(r => r.audience === audience)
+        .forEach(r=>{
+          const el = document.createElement("div");
+          el.className = "item";
+          el.innerHTML = `
+            <div class="item__left">
+              <span class="tag"><span class="dot" style="background:${r.color}"></span>${r.kind}</span>
+              <div>
+                <p class="item__title">${r.title}</p>
+                <p class="item__sub">${r.sub}</p>
+              </div>
+            </div>
+            <div class="item__right">
+              <button class="cta" type="button">Сделать</button>
+            </div>
+          `;
+          box.appendChild(el);
+        });
+    }
+
+    function renderApplyNotifs(){
+      const box = $("#applyNotif");
+      if(!box) return;
+      box.innerHTML = "";
+      mock.applyNotifs.forEach(x=>{
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="item__left">
+            <span class="tag"><span class="dot" style="background:${x.color}"></span>${x.kind}</span>
+            <div>
+              <p class="item__title">${x.title}</p>
+              <p class="item__sub">${x.sub}</p>
+            </div>
+          </div>
+          <div class="item__right">
+            <span class="due">${x.due}</span>
+            <button class="cta" type="button">${x.action}</button>
+          </div>
+        `;
+        box.appendChild(el);
+      });
+    }
+
+    function renderOpps(){
+      const box = $("#oppList");
+      if(!box) return;
+      box.innerHTML = "";
+
+      const rows = mock.opportunities
+        .filter(o => state.oppFilter === "all" ? true : o.type === state.oppFilter)
+        .filter(o => state.search ? (o.title + " " + o.sub).toLowerCase().includes(state.search) : true);
+
+      rows.forEach(o=>{
+        const label = o.type === "olymp" ? "Олимпиада" : (o.type === "course" ? "Курс" : "Грант");
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="item__left">
+            <span class="tag"><span class="dot" style="background:${o.color}"></span>${label}</span>
+            <div>
+              <p class="item__title">${o.title}</p>
+              <p class="item__sub">${o.sub}</p>
+            </div>
+          </div>
+          <div class="item__right">
+            <span class="due">${o.due}</span>
+            <button class="cta" type="button">${o.action}</button>
+          </div>
+        `;
+        box.appendChild(el);
+      });
+
+      if(rows.length === 0){
+        box.innerHTML = `<div class="hint">Нет возможностей по текущим фильтрам (в макете).</div>`;
+      }
+    }
+
+    function renderNotifModal(){
+      const box = $("#notifList");
+      box.innerHTML = "";
+      mock.notifications.forEach(n=>{
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div class="item__left">
+            <span class="tag"><span class="dot" style="background:${n.color}"></span>Событие</span>
+            <div>
+              <p class="item__title">${n.title}</p>
+              <p class="item__sub">${n.sub}</p>
+            </div>
+          </div>
+          <div class="item__right">
+            <button class="cta" type="button">Открыть</button>
+          </div>
+        `;
+        box.appendChild(el);
+      });
+    }
+
+    function recalcCounters(){
+      $("#badgeHw").textContent = String(mock.homework.length);
+      $("#badgeOpp").textContent = String(mock.opportunities.length);
+      $("#notifCount").textContent = String(mock.notifications.length);
+      $("#badgeAll").textContent = String(
+        mock.homework.length + mock.opportunities.length + 0 // можно расширять
+      );
+    }
+
+    function openModal(id){
+      const dlg = $(id);
+      if(!dlg) return;
+      dlg.setAttribute("open", "");
+    }
+
+    function closeModal(dlg){
+      dlg.removeAttribute("open");
+    }
+
+    function wireUI(){
+      // Навигация по разделам
+      $$(".navbtn").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          setView(btn.dataset.view);
+        });
+      });
+
+      // Переходы из кнопок data-open
+      $$("[data-open]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const target = btn.dataset.open;
+          setView(target);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      });
+
+      // Тема
+      $("#themeToggle").addEventListener("click", ()=>{
+        setTheme(state.theme === "dark" ? "light" : "dark");
+      });
+
+      // Роль (ученик/родитель)
+      $("#roleToggle").addEventListener("click", ()=>{
+        setRole(state.role === "student" ? "parent" : "student");
+      });
+
+      // Модалки: открыть
+      $("#openGos").addEventListener("click", ()=> openModal("#modalGos"));
+      $("#openGos2").addEventListener("click", ()=> openModal("#modalGos"));
+      $("#openGos3").addEventListener("click", ()=> openModal("#modalGos"));
+      $("#openNotif").addEventListener("click", ()=>{
+        renderNotifModal();
+        openModal("#modalNotif");
+      });
+      $("#openHelp").addEventListener("click", ()=> openModal("#modalHelp"));
+      $("#openDocs").addEventListener("click", ()=> openModal("#modalDocs"));
+
+      // Модалки: закрыть
+      $$("dialog.modal").forEach(dlg=>{
+        dlg.addEventListener("click", (e)=>{
+          if(e.target === dlg) closeModal(dlg);
+        });
+        $$("[data-close]", dlg).forEach(btn=>{
+          btn.addEventListener("click", ()=> closeModal(dlg));
+        });
+      });
+
+      // Внутренние вкладки (используем на разных экранах одинаковый класс .tab)
+      $$(".card").forEach(card=>{
+        const tabs = $$(".tab", card);
+        if(!tabs.length) return;
+
+        tabs.forEach(t=>{
+          t.addEventListener("click", ()=>{
+            // Если это вкладка KPI (week/month/term) — просто подсветка
+            if(t.dataset.tab){
+              tabs.forEach(x=>x.setAttribute("aria-selected","false"));
+              t.setAttribute("aria-selected","true");
+              // Немного меняем цифры для «живости»
+              if(t.dataset.tab === "week"){ $("#kpiAvg").textContent = "4.4"; $("#todayProg").style.width="42%"; }
+              if(t.dataset.tab === "month"){ $("#kpiAvg").textContent = "4.3"; $("#todayProg").style.width="55%"; }
+              if(t.dataset.tab === "term"){ $("#kpiAvg").textContent = "4.2"; $("#todayProg").style.width="62%"; }
+              return;
+            }
+
+            // Фильтр по предмету
+            if(t.dataset.subject){
+              tabs.forEach(x=>x.setAttribute("aria-selected","false"));
+              t.setAttribute("aria-selected","true");
+              state.subjectFilter = t.dataset.subject;
+              renderGrades();
+              renderHomework();
+              return;
+            }
+
+            // Фильтр возможностей
+            if(t.dataset.opp){
+              tabs.forEach(x=>x.setAttribute("aria-selected","false"));
+              t.setAttribute("aria-selected","true");
+              state.oppFilter = t.dataset.opp;
+              renderOpps();
+              return;
+            }
+          });
+        });
+      });
+
+      // Глобальный поиск
+      $("#globalSearch").addEventListener("input", (e)=>{
+        state.search = (e.target.value || "").trim().toLowerCase();
+        renderGrades();
+        renderHomework();
+        renderOpps();
+      });
+
+      // Псевдо-действия
+      $("#regenPlan").addEventListener("click", ()=>{
+        $("#planText").innerHTML =
+          "План обновлён (пустышка):<br/>" +
+          "День 1: тригонометрия — 15 задач + разбор.<br/>" +
+          "День 2: оптика — 10 задач + формулы.<br/>" +
+          "День 3: мини-пробник 60 минут + разбор ошибок.";
+      });
+
+      $("#openMistakes").addEventListener("click", ()=>{
+        alert("Пустышка: здесь мог бы быть список типовых ошибок с примерами и ссылками на ресурсы.");
+      });
+
+      $("#openConsent").addEventListener("click", ()=>{
+        alert("Пустышка: экран управления согласиями и доступами (какие данные куда подтягиваются).");
+      });
+
+      $("#openCompare").addEventListener("click", ()=>{
+        alert("Пустышка: сравнение программ/вузов (проходные баллы, сроки, условия, гранты).");
+      });
+
+      $("#startApply").addEventListener("click", ()=>{
+        alert("Пустышка: мастер подачи заявления (выбор вузов → документы → отправка).");
+      });
+
+      $("#addMockHw").addEventListener("click", ()=>{
+        const nextId = Math.max(...mock.homework.map(x=>x.id)) + 1;
+        mock.homework.unshift({
+          id: nextId,
+          subject: "Математика",
+          key: "math",
+          title: "Параметры: разбор типовых случаев (№ 1–6)",
+          desc: "Решить 6 задач, отдельно выписать «случаи», которые чаще всего забываются.",
+          due: "Сегодня 21:00",
+          prio: "high"
+        });
+        renderHomework();
+        recalcCounters();
+      });
+
+      $("#markAllRead").addEventListener("click", ()=>{
+        alert("Пустышка: здесь было бы снятие бейджей и обновление ленты.");
+      });
+
+      $("#savePrefs").addEventListener("click", ()=>{
+        alert("Пустышка: настройки уведомлений сохранены (в реальности — в профиле).");
+      });
+
+      $("#fakeRevoke").addEventListener("click", ()=>{
+        alert("Пустышка: отзыв доступа к данным (в реальности — через механизм согласий).");
+      });
+
+      $("#openResourceHub").addEventListener("click", ()=>{
+        alert("Пустышка: каталог ЦОР с фильтрами по темам, уровню и формату.");
+      });
+
+      $("#mockPick1").addEventListener("click", ()=>{
+        alert("Пустышка: подбор ресурсов под ближайшие ДЗ (тригонометрия/оптика).");
+      });
+
+      $("#mockPick2").addEventListener("click", ()=>{
+        alert("Пустышка: подбор ресурсов под слабые темы из пробников ЕГЭ.");
+      });
+    }
+
+    function init(){
+      $("#userName").textContent = mock.user.name;
+      setTheme(state.theme);
+      setRole(state.role);
+      setView(state.view);
+
+      renderUpcoming();
+      renderGrades();
+      renderHomework();
+      renderRecoList();
+      renderApplyNotifs();
+      renderOpps();
+      renderNotifModal();
+      recalcCounters();
+
+      wireUI();
+    }
+
+    init();
+  </script>
+</body>
+</html>
